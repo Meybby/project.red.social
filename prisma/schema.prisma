@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//postgresql
+// Modelo Usuario
+model Usuario {
+  id                Int              @id @default(autoincrement())
+  nombre            String
+  email             String           @unique
+  password          String
+  ciudad            String?
+  intereses         String?
+  foto              String?
+  amigos            Amistad[]        @relation("AmigosEnvio")
+  amigosRecibidos   Amistad[]        @relation("AmigosRecibo")
+  posts             Post[]
+  comentarios       Comentario[]
+  likes             Like[] // Relación inversa para likes
+  mensajesEnviados  Mensaje[]        @relation("MensajesEnviados")
+  mensajesRecibidos Mensaje[]        @relation("MensajesRecibidos")
+  Notificaciones    Notificaciones[]
+}
+
+// Modelo Like
+model Like {
+  id        Int     @id @default(autoincrement())
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+  postId    Int
+  post      Post    @relation(fields: [postId], references: [id])
+}
+
+// Modelo Post
+model Post {
+  id          Int          @id @default(autoincrement())
+  contenido   String
+  autorId     Int
+  autor       Usuario      @relation(fields: [autorId], references: [id])
+  comentarios Comentario[]
+  likes       Like[]
+  createdAt   DateTime     @default(now())
+}
+
+// Modelo Comentario
+model Comentario {
+  id        Int      @id @default(autoincrement())
+  contenido String
+  autorId   Int
+  autor     Usuario  @relation(fields: [autorId], references: [id])
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// Modelo Amistad
+model Amistad {
+  id              Int     @id @default(autoincrement())
+  usuarioEnviaId  Int
+  usuarioRecibeId Int
+  usuarioEnvia    Usuario @relation("AmigosEnvio", fields: [usuarioEnviaId], references: [id])
+  usuarioRecibe   Usuario @relation("AmigosRecibo", fields: [usuarioRecibeId], references: [id])
+  status          String  @default("pendiente") // puede ser "pendiente", "aceptado" o "rechazado"
+}
+
+// Modelo Mensaje
+model Mensaje {
+  id            Int      @id @default(autoincrement())
+  contenido     String
+  enviadoPorId  Int
+  recibidoPorId Int
+  enviadoPor    Usuario  @relation("MensajesEnviados", fields: [enviadoPorId], references: [id])
+  recibidoPor   Usuario  @relation("MensajesRecibidos", fields: [recibidoPorId], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+model Notificaciones {
+  id           Int     @id @default(autoincrement())
+  notificacion String
+  userId       Int
+  usuario      Usuario @relation(fields: [userId], references: [id]) // Relación con Usuario
+}
